@@ -1,6 +1,6 @@
 tft:
   - name: "Test 1"
-    namespace: "default"
+    namespace: "ft"
     # test cases can be specified individually i.e "1,2,3,6" or as a range i.e. "1-9,15-19"
     test_cases: "1"
     duration: "30"
@@ -14,10 +14,10 @@ tft:
         server:
           - name: "worker-229"
             persistent: "false"
-            sriov: "true"
+            sriov: "false"
         client:
           - name: "worker-230"
-            sriov: "true"
+            sriov: "false"
         plugins:
           - name: measure_cpu
           - name: measure_power

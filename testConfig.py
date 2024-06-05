@@ -25,7 +25,7 @@ class ClusterMode(Enum):
 class TestConfig:
     kubeconfig_tenant: str = "/root/kubeconfig.tenantcluster"
     kubeconfig_infra: str = "/root/kubeconfig.infracluster"
-    kubeconfig_single: str = "/root/kubeconfig.nicmodecluster"
+    kubeconfig_single: str = "/root/ovn-helm-2.kubeconfig"
     kubeconfig_cx: str = "/root/kubeconfig.smartniccluster"
     mode: ClusterMode = ClusterMode.SINGLE
     client_tenant: K8sClient
