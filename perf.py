@@ -60,13 +60,22 @@ class PerfServer(Task):
         self.cluster_ip_addr = self.create_cluster_ip_service()
         self.nodeport_ip_addr = self.create_node_port_service(self.port + 25000)
 
+        if self.connection_mode == ConnectionMode.NETWORK_POLICY:
+            self.create_allow_dns_network_policy()
+            self.create_ingress_network_policy()
+            self.create_egress_network_policy()
+
+        if self.connection_mode == ConnectionMode.MULTI_NETWORK:
+            self.create_ingress_multi_network_policy()
+            self.create_egress_multi_network_policy()
+
     def confirm_server_alive(self) -> None:
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
             # Podman scenario
             end_time = time.monotonic() + 60
             while time.monotonic() < end_time:
                 r = self.lh.run(
-                    f"podman ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
+                    f"docker ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
                 )
                 if self.pod_name in r.out:
                     break
@@ -147,12 +156,15 @@ class PerfClient(Task):
             external_pod_ip = self.get_podman_ip(self.server.pod_name)
             logger.debug(f"get_target_ip() External connection to {external_pod_ip}")
             return external_pod_ip
+        elif self.connection_mode in (ConnectionMode.MULTI_NETWORK, ConnectionMode.MULTI_HOME):
+            server_ip2 = self.server.get_secondary_ip()
+            return server_ip2
         server_ip = self.server.get_pod_ip()
         logger.debug(f"get_target_ip() Connection to server at {server_ip}")
         return server_ip
 
     def get_podman_ip(self, pod_name: str) -> str:
-        cmd = "podman inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
+        cmd = "docker inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
 
         for _ in range(5):
             ret = self.lh.run(cmd)

@@ -113,6 +113,7 @@ class Evaluator:
                 run["flow_test"] = dataclass_from_dict(IperfOutput, run["flow_test"])
 
             self._eval_flow_test(run["flow_test"])
+            print(f"Test Results: {self.test_results}")
             for plugin_output in run["plugins"]:
                 plugin_output = dataclass_from_dict(PluginOutput, plugin_output)
                 plugin = pluginbase.get_by_name(plugin_output.name)

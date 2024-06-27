@@ -55,6 +55,10 @@ class TestCaseType(Enum):
     HOST_TO_NODE_PORT_TO_HOST_DIFF_NODE = 24
     POD_TO_EXTERNAL = 25
     HOST_TO_EXTERNAL = 26
+    POD_TO_POD_2ND_INTERFACE_SAME_NODE = 27
+    POD_TO_POD_2ND_INTERFACE_DIFF_NODE = 28
+    NETWORK_POLICY_TEST = 29
+    MULTI_NETWORK_POLICY_TEST = 30
 
 
 class ConnectionMode(Enum):
@@ -62,6 +66,9 @@ class ConnectionMode(Enum):
     CLUSTER_IP = 2
     NODE_PORT_IP = 3
     EXTERNAL_IP = 4
+    MULTI_NETWORK = 5
+    MULTI_HOME = 6
+    NETWORK_POLICY = 7
 
 
 class NodeLocation(Enum):

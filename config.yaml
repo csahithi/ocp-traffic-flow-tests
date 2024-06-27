@@ -1,8 +1,8 @@
 tft:
   - name: "Test 1"
-    namespace: "ft"
+    namespace: "default"
     # test cases can be specified individually i.e "1,2,3,6" or as a range i.e. "1-9,15-19"
-    test_cases: "1"
+    test_cases: "3-4"
     duration: "30"
     # Location of artifacts from run can be specified: default <working-dir>/ft-logs/
     # logs: "/tmp/ft-logs"
@@ -12,13 +12,11 @@ tft:
         type: "iperf-tcp"
         instances: 1
         server:
-          - name: "worker-229"
-            persistent: "false"
+          - name: "ovn-helm-2-worker2"
+            persistent: "true"
             sriov: "false"
         client:
-          - name: "worker-230"
+          - name: "ovn-helm-2-worker"
             sriov: "false"
         plugins:
-          - name: measure_cpu
-          - name: measure_power
-          - name: validate_offload
+

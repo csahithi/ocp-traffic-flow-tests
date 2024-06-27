@@ -6,13 +6,15 @@ metadata:
   labels:
     tft-tests: "{{ index }}"
     tft-port: "{{ port }}"
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ovn-stream-veth
 spec:
   nodeSelector:
     kubernetes.io/hostname: {{ node_name }}
   containers:
   - name: {{ pod_name }}
     image: {{ test_image }}
-    command:
-      - "{{ command }}"
-    args: {{ args }}
+    command: {{ command }}
+    args: 
+    - "{{ args }}"
     imagePullPolicy: IfNotPresent

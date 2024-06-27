@@ -52,7 +52,10 @@ class ReturnValueThread(Thread):
             logger.info(f"Exception during cleanup_action execution: {e}")
 
     def join_with_result(self, timeout: Optional[float] = None) -> Optional[Result]:
-        super().join(timeout)
+        try:
+            super().join(timeout)
+        except Exception as e:
+            logger.info("Exception: Join failed: {e}")
         if self.is_alive():
             logger.info(f"Thread did not terminate within the timeout time: {timeout}")
             self.force_terminate()

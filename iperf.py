@@ -36,8 +36,8 @@ class IperfServer(perf.PerfServer):
 
     def setup(self) -> None:
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"podman run -it --rm -p {self.port} --entrypoint {IPERF_EXE} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} -s --one-off"
-            cleanup_cmd = f"podman rm --force {self.pod_name}"
+            cmd = f"docker run -it --rm -p {self.port} --entrypoint {IPERF_EXE} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} -s --one-off"
+            cleanup_cmd = f"docker rm --force {self.pod_name}"
         else:
             # Create the server pods
             super().setup()
@@ -80,6 +80,8 @@ class IperfClient(perf.PerfClient):
             self.cmd = f" {self.cmd} {IPERF_UDP_OPT}"
         if self.reverse:
             self.cmd = f" {self.cmd} {IPERF_REV_OPT}"
+        logger.info(f"Running {self.cmd}")
+        logger.info(f"Target IP (server_ip): {server_ip}")
         self.exec_thread = ReturnValueThread(target=client, args=(self, self.cmd))
         self.exec_thread.start()
 
@@ -108,6 +110,7 @@ class IperfClient(perf.PerfClient):
             )
             return
         if self.test_type == TestType.IPERF_TCP:
+            logger.info(self._output.result)
             self.print_tcp_results(self._output.result)
         if self.test_type == TestType.IPERF_UDP:
             self.print_udp_results(self._output.result)

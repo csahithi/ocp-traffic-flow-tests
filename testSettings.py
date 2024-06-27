@@ -84,6 +84,12 @@ class TestSettings:
             return ConnectionMode.NODE_PORT_IP
         if test_case_id.value in (25, 26):
             return ConnectionMode.EXTERNAL_IP
+        if test_case_id.value in (27, 28):
+            return ConnectionMode.MULTI_HOME
+        if test_case_id.value == 29:
+            return ConnectionMode.NETWORK_POLICY
+        if test_case_id.value == 30:
+            return ConnectionMode.MULTI_NETWORK
         return ConnectionMode.POD_IP
 
     def get_test_metadata(self) -> TestMetadata:
@@ -115,7 +121,7 @@ class TestSettings:
         return node_server_name
 
     def _is_same_node_test(self, test_id: TestCaseType) -> bool:
-        return test_id.value in (1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23)
+        return test_id.value in (1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 27, 28)
 
     def _server_test_to_persistent(self, test_id: TestCaseType) -> bool:
         # TODO: add logic to determine when this is required

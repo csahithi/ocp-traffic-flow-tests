@@ -28,8 +28,8 @@ class Task(ABC):
 
         self.template_args["name_space"] = "default"
         self.template_args["test_image"] = tftbase.TFT_TOOLS_IMG
-        self.template_args["command"] = "/sbin/init"
-        self.template_args["args"] = ""
+        self.template_args["command"] = ["/bin/sh", "-c"]
+        self.template_args["args"] = "/sbin/init; sleep infinity"
         self.template_args["index"] = f"{index}"
 
         self.index = index
@@ -57,6 +57,21 @@ class Task(ABC):
 
         y = yaml.safe_load(r.out)
         return typing.cast(str, y["status"]["podIP"])
+
+    def get_secondary_ip(self) -> str:
+        jsonpath = '{.metadata.annotations.k8s\.ovn\.org\/pod-networks}'
+        logger.info(f"get pod {self.pod_name} -o jsonpath='{jsonpath}'")        
+        r = self.run_oc(f"get pod {self.pod_name} -o jsonpath='{jsonpath}'")
+        if r.returncode != 0:
+            logger.info(r)
+            sys.exit(-1)
+
+        y = yaml.safe_load(r.out)
+        logger.info(f"Output y: {y}")
+        ip_address_with_cidr = typing.cast(str, y["default/ovn-stream-veth"]["ip_address"])
+        logger.info(f"IP CIDR: {ip_address_with_cidr}")
+        ip_address = ip_address_with_cidr.split("/")[0] if ip_address_with_cidr else ""
+        return typing.cast(str, ip_address)
 
     def create_cluster_ip_service(self) -> str:
         in_file_template = "./manifests/svc-cluster-ip.yaml.j2"
@@ -91,6 +106,66 @@ class Task(ABC):
             "get service tft-nodeport-service -o=jsonpath='{.spec.clusterIP}'"
         ).out
 
+    def create_allow_dns_network_policy(self):
+        in_file_template = "./manifests/allow-dns-access.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-dns-access.yaml"
+        common.j2_render(in_file_template, out_file_yaml, self.template_args)
+        logger.info(f"Creating Allow DNS Network Policy {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Allow DNS Network Policy")
+
+    def create_ingress_network_policy(self):
+        in_file_template = "./manifests/allow-iperf-5201-ingress.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-iperf-5201-ingress.yaml"
+        common.j2_render(in_file_template, out_file_yaml, self.template_args)
+        logger.info(f"Creating Ingress Network Policy {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Ingress Network Policy")
+
+    def create_egress_network_policy(self):
+        in_file_template = "./manifests/allow-iperf-5201-egress.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-iperf-5201-egress.yaml"
+        common.j2_render(in_file_template, out_file_yaml, self.template_args)
+        logger.info(f"Creating Egress Network Policy {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Egress Network Policy")
+
+    def create_ingress_multi_network_policy(self):
+        in_file_template = "./manifests/allow-iperf-5201-ingress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-iperf-5201-ingress-veth-mnp.yaml"
+        common.j2_render(in_file_template, out_file_yaml, self.template_args)
+        logger.info(f"Creating Ingress MNP {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Ingress MNP")
+
+    def create_egress_multi_network_policy(self):
+        in_file_template = "./manifests/allow-iperf-5201-egress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-iperf-5201-egress-veth-mnp.yaml"
+        common.j2_render(in_file_template, out_file_yaml, self.template_args)
+        logger.info(f"Creating Egress MNP {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Egress MNP")
+
     def setup(self) -> None:
         # Check if pod already exists
         r = self.run_oc(f"get pod {self.pod_name} --output=json")
@@ -109,6 +184,8 @@ class Task(ABC):
         if r.returncode != 0:
             logger.info(r)
             sys.exit(-1)
+        r = self.run_oc(f"get po {self.pod_name} --output=json")
+        logger.info(r)
 
     @abstractmethod
     def run(self, duration: int) -> None:

@@ -28,8 +28,8 @@ class NetPerfServer(perf.PerfServer):
 
     def setup(self) -> None:
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"podman run -it --rm -p {self.port} --entrypoint {NETPERF_SERVER_EXE} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} -p {self.port} -N"
-            cleanup_cmd = f"podman rm --force {self.pod_name}"
+            cmd = f"docker run -it --rm -p {self.port} --entrypoint {NETPERF_SERVER_EXE} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} -p {self.port} -N"
+            cleanup_cmd = f"docker rm --force {self.pod_name}"
         else:
             # Create the server pods
             super().setup()
