@@ -57,6 +57,9 @@ class PerfServer(Task):
         common.j2_render(self.in_file_template, self.out_file_yaml, self.template_args)
         logger.info(f"Generated Server Pod Yaml {self.out_file_yaml}")
 
+        if self.connection_mode in (ConnectionMode.MULTI_HOME, ConnectionMode.MULTI_NETWORK):
+            self.create_network_attachment_definition()
+
         self.cluster_ip_addr = self.create_cluster_ip_service()
         self.nodeport_ip_addr = self.create_node_port_service(self.port + 25000)
 

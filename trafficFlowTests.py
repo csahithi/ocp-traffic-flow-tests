@@ -84,18 +84,27 @@ class TrafficFlowTests:
             logger.error(r)
             raise Exception("cleanup_previous_testspace(): Failed to delete services")
         logger.info(f"Cleaned services with label tft-tests in namespace {namespace}")
-        logger.info(f"Cleaning multi-networkpolicies with label tft-tests in namespace {namespace}")
-        r = self._tc.client_tenant.oc(f"delete multi-networkpolicies -n {namespace} -l tft-tests")
-        if r.returncode != 0:
-            logger.error(r)
-            raise Exception("cleanup_previous_testspace(): Failed to delete multi-networkpolicies")
-        logger.info(f"Cleaned multi-networkpolicies with label tft-tests in namespace {namespace}")
-        logger.info(f"Cleaning networkpolicies with label tft-tests in namespace {namespace}")
-        r = self._tc.client_tenant.oc(f"delete networkpolicies -n {namespace} -l tft-tests")
-        if r.returncode != 0:
-            logger.error(r)
-            raise Exception("cleanup_previous_testspace(): Failed to delete networkpolicies")
-        logger.info(f"Cleaned networkpolicies with label tft-tests in namespace {namespace}")
+        if self.test_settings.test_case_id == 30:
+            logger.info(f"Cleaning multi-networkpolicies with label tft-tests in namespace {namespace}")
+            r = self._tc.client_tenant.oc(f"delete multi-networkpolicies -n {namespace} -l tft-tests")
+            if r.returncode != 0:
+                logger.error(r)
+                raise Exception("cleanup_previous_testspace(): Failed to delete multi-networkpolicies")
+            logger.info(f"Cleaned multi-networkpolicies with label tft-tests in namespace {namespace}")
+        if self.test_settings.test_case_id == 29:
+            logger.info(f"Cleaning networkpolicies with label tft-tests in namespace {namespace}")
+            r = self._tc.client_tenant.oc(f"delete networkpolicies -n {namespace} -l tft-tests")
+            if r.returncode != 0:
+                logger.error(r)
+                raise Exception("cleanup_previous_testspace(): Failed to delete networkpolicies")
+            logger.info(f"Cleaned networkpolicies with label tft-tests in namespace {namespace}")
+        if self.test_settings.test_case_id in (27, 28, 30):
+            logger.info(f"Cleaning NAD with label tft-tests in namespace {namespace}")
+            r = self._tc.client_tenant.oc(f"delete net-attach-def -n {namespace} -l tft-tests")
+            if r.returncode != 0:
+                logger.error(r)
+                raise Exception("cleanup_previous_testspace(): Failed to delete net-attach-def")
+            logger.info(f"Cleaned NAD with label tft-tests in namespace {namespace}")
         logger.info(
             f"Cleaning external containers {perf.EXTERNAL_PERF_SERVER} (if present)"
         )
