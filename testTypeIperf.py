@@ -100,6 +100,7 @@ class IperfServer(perf.PerfServer):
 
 class IperfClient(perf.PerfClient):
     def _create_task_operation(self) -> TaskOperation:
+        logger.info("Getting target ip from get_target_ip()")
         server_ip = self.get_target_ip()
         cmd = (
             f"{IPERF_EXE} -c {server_ip} -p {self.port} --json -t {self.get_duration()}"
@@ -108,6 +109,8 @@ class IperfClient(perf.PerfClient):
             cmd += f" {IPERF_UDP_OPT}"
         if self.reverse:
             cmd += f" {IPERF_REV_OPT}"
+        logger.info(f"Running {cmd}")
+        logger.info(f"Target IP (server_ip): {server_ip}")
 
         def _thread_action() -> BaseOutput:
             self.ts.clmo_barrier.wait()

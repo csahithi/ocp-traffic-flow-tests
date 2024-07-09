@@ -54,6 +54,18 @@ class PerfServer(Task, abc.ABC):
         self.out_file_yaml = out_file_yaml
         self.pod_name = pod_name
 
+        if self.connection_mode in (ConnectionMode.MULTI_HOME, ConnectionMode.MULTI_NETWORK):
+            self.create_network_attachment_definition()
+
+        if self.connection_mode == ConnectionMode.NETWORK_POLICY:
+            self.create_allow_dns_network_policy()
+            self.create_ingress_network_policy()
+            self.create_egress_network_policy()
+
+        if self.connection_mode == ConnectionMode.MULTI_NETWORK:
+            self.create_ingress_multi_network_policy()
+            self.create_egress_multi_network_policy()
+
     def get_template_args(self) -> dict[str, str]:
 
         extra_args: dict[str, str] = {}
@@ -84,7 +96,7 @@ class PerfServer(Task, abc.ABC):
             end_time = time.monotonic() + 60
             while time.monotonic() < end_time:
                 r = self.lh.run(
-                    f"podman ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
+                    f"docker ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
                 )
                 if self.pod_name in r.out:
                     break
@@ -115,8 +127,8 @@ class PerfServer(Task, abc.ABC):
         th_cmd = self._create_setup_operation_get_thread_action_cmd()
 
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"podman run -it --init --replace --rm -p {self.port} --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
-            cancel_cmd = f"podman rm --force {self.pod_name}"
+            cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} {th_cmd}"
+            cancel_cmd = f"docker rm --force {self.pod_name}"
         else:
             self.setup_pod()
             ca_cmd = self._create_setup_operation_get_cancel_action_cmd()
@@ -203,6 +215,7 @@ class PerfClient(Task, abc.ABC):
         self.render_file("Client Pod Yaml")
 
     def get_target_ip(self) -> str:
+        logger.info(f"Executing get_target_ip for {self.connection_mode}")
         if self.connection_mode == ConnectionMode.CLUSTER_IP:
             logger.debug(
                 f"get_target_ip() ClusterIP connection to {self.server.cluster_ip_addr}"
@@ -214,22 +227,28 @@ class PerfClient(Task, abc.ABC):
             )
             return self.server.nodeport_ip_addr
         elif self.connection_mode == ConnectionMode.EXTERNAL_IP:
+            logger.info("Executing external ip get_podman_ip()")
             external_pod_ip = self.get_podman_ip(self.server.pod_name)
-            logger.debug(f"get_target_ip() External connection to {external_pod_ip}")
+            logger.info(f"get_target_ip() External connection to {external_pod_ip}")
             return external_pod_ip
+        elif self.connection_mode in (ConnectionMode.MULTI_NETWORK, ConnectionMode.MULTI_HOME):
+            server_ip2 = self.server.get_secondary_ip()
+            logger.debug(f"get_target_ip() Multi network connection to {server_ip2}")
+            return server_ip2
         server_ip = self.server.get_pod_ip()
-        logger.debug(f"get_target_ip() Connection to server at {server_ip}")
+        logger.info(f"get_target_ip() Connection to server at {server_ip}")
         return server_ip
 
     def get_podman_ip(self, pod_name: str) -> str:
-        cmd = "podman inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
-
+        cmd = "docker inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
+        logger.info(cmd)
         for _ in range(5):
             ret = self.lh.run(cmd)
+            logger.info(ret)
             if ret.returncode == 0:
                 ip_address = ret.out.strip()
                 if ip_address:
-                    logger.debug(f"get_podman_ip({pod_name}) found: {ip_address}")
+                    logger.info(f"get_podman_ip({pod_name}) found: {ip_address}")
                     return ip_address
 
             time.sleep(2)
