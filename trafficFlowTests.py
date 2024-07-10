@@ -56,14 +56,6 @@ class TrafficFlowTests:
             logger.error(r)
             raise Exception("cleanup_previous_testspace(): Failed to delete multi-networkpolicies")
         logger.info(f"Cleaned multi-networkpolicies with label tft-tests in namespace {namespace}")
-        logger.info(f"Cleaning networkpolicies with label tft-tests in namespace {namespace}")
-        r = cfg_descr.tc.client_tenant.oc(
-            f"delete networkpolicies -n {namespace} -l tft-tests"
-        )
-        if r.returncode != 0:
-            logger.error(r)
-            raise Exception("cleanup_previous_testspace(): Failed to delete networkpolicies")
-        logger.info(f"Cleaned networkpolicies with label tft-tests in namespace {namespace}")
         logger.info(
             f"Cleaning external containers {perf.EXTERNAL_PERF_SERVER} (if present)"
         )

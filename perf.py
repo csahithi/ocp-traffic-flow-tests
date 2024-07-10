@@ -54,8 +54,8 @@ class PerfServer(Task, abc.ABC):
         self.out_file_yaml = out_file_yaml
         self.pod_name = pod_name
 
-        if self.connection_mode in (ConnectionMode.MULTI_HOME, ConnectionMode.MULTI_NETWORK):
-            self.create_network_attachment_definition()
+        # if self.connection_mode in (ConnectionMode.MULTI_HOME, ConnectionMode.MULTI_NETWORK):
+        #     self.create_network_attachment_definition()
 
         if self.connection_mode == ConnectionMode.MULTI_NETWORK:
             self.create_ingress_multi_network_policy(self.port)
@@ -71,6 +71,7 @@ class PerfServer(Task, abc.ABC):
         return {
             **super().get_template_args(),
             "default_network": self.ts.conf_server.default_network,
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
             **extra_args,
         }
 
@@ -202,6 +203,7 @@ class PerfClient(Task, abc.ABC):
         return {
             **super().get_template_args(),
             "default_network": self.ts.conf_client.default_network,
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
             "pod_name": self.pod_name,
         }
 

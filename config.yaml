@@ -20,4 +20,5 @@ tft:
             sriov: "false"
         plugins:
           - name: measure_cpu
+        secondary_network_nad: "default/ovn-secondary"
 
