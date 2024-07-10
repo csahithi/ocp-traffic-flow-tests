@@ -115,8 +115,7 @@ class TestCaseType(Enum):
     HOST_TO_EXTERNAL = 26
     POD_TO_POD_2ND_INTERFACE_SAME_NODE = 27
     POD_TO_POD_2ND_INTERFACE_DIFF_NODE = 28
-    NETWORK_POLICY_TEST = 29
-    MULTI_NETWORK_POLICY_TEST = 30
+    MULTI_NETWORK_POLICY_TEST = 29
 
 
 class ConnectionMode(Enum):
@@ -126,7 +125,6 @@ class ConnectionMode(Enum):
     EXTERNAL_IP = 4
     MULTI_NETWORK = 5
     MULTI_HOME = 6
-    NETWORK_POLICY = 7
 
 class NodeLocation(Enum):
     SAME_NODE = 1
@@ -466,12 +464,6 @@ _test_case_typ_infos = {
     TestCaseType.POD_TO_POD_2ND_INTERFACE_DIFF_NODE: TestCaseTypInfo(
         connection_mode=ConnectionMode.MULTI_HOME,
         is_same_node=False,
-        is_server_hostbacked=False,
-        is_client_hostbacked=False,
-    ),
-    TestCaseType.NETWORK_POLICY_TEST: TestCaseTypInfo(
-        connection_mode=ConnectionMode.NETWORK_POLICY,
-        is_same_node=True,
         is_server_hostbacked=False,
         is_client_hostbacked=False,
     ),

@@ -57,11 +57,6 @@ class PerfServer(Task, abc.ABC):
         if self.connection_mode in (ConnectionMode.MULTI_HOME, ConnectionMode.MULTI_NETWORK):
             self.create_network_attachment_definition()
 
-        if self.connection_mode == ConnectionMode.NETWORK_POLICY:
-            self.create_allow_dns_network_policy()
-            self.create_ingress_network_policy()
-            self.create_egress_network_policy()
-
         if self.connection_mode == ConnectionMode.MULTI_NETWORK:
             self.create_ingress_multi_network_policy()
             self.create_egress_multi_network_policy()

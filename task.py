@@ -392,42 +392,6 @@ class Task(ABC):
         return self.run_oc(
             "get service tft-nodeport-service -o=jsonpath='{.spec.clusterIP}'"
         ).out
-    
-    def create_allow_dns_network_policy(self):
-        in_file_template = "./manifests/allow-dns-access.yaml.j2"
-        out_file_yaml = "./manifests/yamls/allow-dns-access.yaml"
-        self.render_file("Allow DNS Network Policy", in_file_template, out_file_yaml)
-        logger.info(f"Creating Allow DNS Network Policy {out_file_yaml}")
-        r = self.run_oc(f"apply -f {out_file_yaml}")
-        if r.returncode != 0:
-            if "already exists" not in r.err:
-                logger.info(r)
-                sys.exit(-1)
-        logger.info("Created Allow DNS Network Policy")
-
-    def create_ingress_network_policy(self):
-        in_file_template = "./manifests/allow-iperf-5201-ingress.yaml.j2"
-        out_file_yaml = "./manifests/yamls/allow-iperf-5201-ingress.yaml"
-        self.render_file("Ingress Network Policy", in_file_template, out_file_yaml)
-        logger.info(f"Creating Ingress Network Policy {out_file_yaml}")
-        r = self.run_oc(f"apply -f {out_file_yaml}")
-        if r.returncode != 0:
-            if "already exists" not in r.err:
-                logger.info(r)
-                sys.exit(-1)
-        logger.info("Created Ingress Network Policy")
-
-    def create_egress_network_policy(self):
-        in_file_template = "./manifests/allow-iperf-5201-egress.yaml.j2"
-        out_file_yaml = "./manifests/yamls/allow-iperf-5201-egress.yaml"
-        self.render_file("Egress Network Policy", in_file_template, out_file_yaml)
-        logger.info(f"Creating Egress Network Policy {out_file_yaml}")
-        r = self.run_oc(f"apply -f {out_file_yaml}")
-        if r.returncode != 0:
-            if "already exists" not in r.err:
-                logger.info(r)
-                sys.exit(-1)
-        logger.info("Created Egress Network Policy")
 
     def create_ingress_multi_network_policy(self):
         in_file_template = "./manifests/allow-iperf-5201-ingress-veth-mnp.yaml.j2"
