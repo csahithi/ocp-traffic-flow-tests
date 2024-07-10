@@ -123,7 +123,7 @@ class PerfServer(Task, abc.ABC):
         th_cmd = self._create_setup_operation_get_thread_action_cmd()
 
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --name={self.pod_name} {tftbase.TFT_TOOLS_IMG} {th_cmd}"
+            cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
             cancel_cmd = f"docker rm --force {self.pod_name}"
         else:
             self.setup_pod()
