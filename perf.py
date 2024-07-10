@@ -58,8 +58,8 @@ class PerfServer(Task, abc.ABC):
             self.create_network_attachment_definition()
 
         if self.connection_mode == ConnectionMode.MULTI_NETWORK:
-            self.create_ingress_multi_network_policy()
-            self.create_egress_multi_network_policy()
+            self.create_ingress_multi_network_policy(self.port)
+            self.create_egress_multi_network_policy(self.port)
 
     def get_template_args(self) -> dict[str, str]:
 

@@ -393,10 +393,16 @@ class Task(ABC):
             "get service tft-nodeport-service -o=jsonpath='{.spec.clusterIP}'"
         ).out
 
-    def create_ingress_multi_network_policy(self):
-        in_file_template = "./manifests/allow-iperf-5201-ingress-veth-mnp.yaml.j2"
-        out_file_yaml = "./manifests/yamls/allow-iperf-5201-ingress-veth-mnp.yaml"
-        self.render_file("Ingress Multi Network Policy", in_file_template, out_file_yaml)
+    def create_ingress_multi_network_policy(self, ingressPort: int):
+        in_file_template = "./manifests/allow-ingress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-ingress-veth-mnp.yaml"
+
+        template_args = {
+            **self.get_template_args(),
+            "ingress_port": f"{ingressPort}",
+        }
+
+        self.render_file("Ingress Multi Network Policy", in_file_template, out_file_yaml, template_args)
         logger.info(f"Creating Ingress MNP {out_file_yaml}")
         r = self.run_oc(f"apply -f {out_file_yaml}")
         if r.returncode != 0:
@@ -405,10 +411,16 @@ class Task(ABC):
                 sys.exit(-1)
         logger.info("Created Ingress MNP")
 
-    def create_egress_multi_network_policy(self):
-        in_file_template = "./manifests/allow-iperf-5201-egress-veth-mnp.yaml.j2"
-        out_file_yaml = "./manifests/yamls/allow-iperf-5201-egress-veth-mnp.yaml"
-        self.render_file("Egress Multi Network Policy", in_file_template, out_file_yaml)
+    def create_egress_multi_network_policy(self, egressPort: int):
+        in_file_template = "./manifests/allow-egress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-egress-veth-mnp.yaml"
+
+        template_args = {
+            **self.get_template_args(),
+            "egress_port": f"{egressPort}",
+        }
+
+        self.render_file("Egress Multi Network Policy", in_file_template, out_file_yaml, template_args)
         logger.info(f"Creating Egress MNP {out_file_yaml}")
         r = self.run_oc(f"apply -f {out_file_yaml}")
         if r.returncode != 0:

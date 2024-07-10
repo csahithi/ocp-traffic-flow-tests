@@ -2,16 +2,16 @@ kind: MultiNetworkPolicy
 apiVersion: k8s.cni.cncf.io/v1beta1
 metadata:
   namespace: {{ name_space }}
-  name: allow-iperf-5201-egress-veth-mnp
+  name: allow-ingress-veth-mnp
   labels:
     tft-tests: "{{ index }}"
   annotations:
     k8s.v1.cni.cncf.io/policy-for: default/ovn-stream-veth
 spec:
   podSelector: {}
-  egress:
-    - to:
+  ingress:
+    - from:
         - podSelector: {}
       ports:
-        - port: 5201
+        - port: {{ ingress_port }}
           protocol: TCP
