@@ -59,7 +59,7 @@ class TrafficFlowTests:
         logger.info(
             f"Cleaning external containers {perf.EXTERNAL_PERF_SERVER} (if present)"
         )
-        cmd = f"docker rm --force --time 10 {perf.EXTERNAL_PERF_SERVER}"
+        cmd = f"docker stop --time 10 {perf.EXTERNAL_PERF_SERVER} && docker rm --force {perf.EXTERNAL_PERF_SERVER}"
         host.local.run(cmd)
 
     def _create_log_paths_from_tests(self, test: testConfig.ConfTest) -> Path:
