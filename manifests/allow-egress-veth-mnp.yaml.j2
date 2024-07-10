@@ -6,7 +6,7 @@ metadata:
   labels:
     tft-tests: "{{ index }}"
   annotations:
-    k8s.v1.cni.cncf.io/policy-for: default/ovn-stream-veth
+    k8s.v1.cni.cncf.io/policy-for: {{ secondary_network_nad }}
 spec:
   podSelector: {}
   egress:

@@ -339,7 +339,7 @@ class Task(ABC):
 
         y = yaml.safe_load(r.out)
         logger.info(f"Output y: {y}")
-        ip_address_with_cidr = typing.cast(str, y["default/ovn-stream-veth"]["ip_address"])
+        ip_address_with_cidr = typing.cast(str, y[self.ts.connection.secondary_network_nad]["ip_address"])
         logger.info(f"IP CIDR: {ip_address_with_cidr}")
         ip_address = ip_address_with_cidr.split("/")[0] if ip_address_with_cidr else ""
         return typing.cast(str, ip_address)
@@ -400,6 +400,7 @@ class Task(ABC):
         template_args = {
             **self.get_template_args(),
             "ingress_port": f"{ingressPort}",
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
         }
 
         self.render_file("Ingress Multi Network Policy", in_file_template, out_file_yaml, template_args)
@@ -418,6 +419,7 @@ class Task(ABC):
         template_args = {
             **self.get_template_args(),
             "egress_port": f"{egressPort}",
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
         }
 
         self.render_file("Egress Multi Network Policy", in_file_template, out_file_yaml, template_args)

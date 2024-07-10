@@ -256,7 +256,7 @@ class ConfConnection(StructParseBaseNamed):
                     ConfPlugin.parse(yamlidx2, f"{yamlpath}.plugins[{yamlidx}]", arg)
                 )
 
-        secondary_network_nad = "default/ovn-secondary"
+        secondary_network_nad = ""
         v = vdict.pop("secondary_network_nad", None)
         if v is not None:
             if not isinstance(v, str):
