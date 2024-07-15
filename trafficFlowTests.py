@@ -1,6 +1,7 @@
 import datetime
 import json
 import perf
+import time
 
 from pathlib import Path
 
@@ -148,6 +149,10 @@ class TrafficFlowTests:
         for t in servers + clients + monitors:
             t.initialize()
 
+        logger.info("Timeout start")
+        time.sleep(10)
+        logger.info("Timeout end")
+
         ts.initialize_clmo_barrier(len(clients) + len(monitors))
 
         for tasks in servers + clients + monitors:
@@ -187,6 +192,7 @@ class TrafficFlowTests:
                         instance_index=instance_index,
                     )
                 )
+                logger.info(f"Can run reverse: { connection.test_type_handler.can_run_reverse() }")
                 if connection.test_type_handler.can_run_reverse():
                     tft_output.append(
                         self._run_test_case_instance(
