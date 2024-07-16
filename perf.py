@@ -91,9 +91,14 @@ class PerfServer(Task, abc.ABC):
             # Podman scenario
             end_time = time.monotonic() + 60
             while time.monotonic() < end_time:
-                r = self.lh.run(
-                    f"docker ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
-                )
+                if self.get_oci_bin() == "docker":
+                    r = self.lh.run(
+                        f"docker ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
+                    )
+                else:
+                    r = self.lh.run(
+                        f"podman ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
+                    )
                 if self.pod_name in r.out:
                     break
                 time.sleep(5)
@@ -123,8 +128,12 @@ class PerfServer(Task, abc.ABC):
         th_cmd = self._create_setup_operation_get_thread_action_cmd()
 
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --network=kind --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
-            cancel_cmd = f"docker rm --force {self.pod_name}"
+            if self.get_oci_bin() == "docker":
+                cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --network=kind --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
+                cancel_cmd = f"docker rm --force {self.pod_name}"
+            else:
+                cmd = f"podman run -it --init --replace --rm -p {self.port} --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
+                cancel_cmd = f"podman rm --force {self.pod_name}"
         else:
             self.setup_pod()
             ca_cmd = self._create_setup_operation_get_cancel_action_cmd()
@@ -237,7 +246,10 @@ class PerfClient(Task, abc.ABC):
         return server_ip
 
     def get_podman_ip(self, pod_name: str) -> str:
-        cmd = "docker inspect --format '{{.NetworkSettings.Networks.kind.IPAddress}}' " + pod_name
+        if self.get_oci_bin() == "docker":
+            cmd = "docker inspect --format '{{.NetworkSettings.Networks.kind.IPAddress}}' " + pod_name
+        else:
+            cmd = "podman inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
         logger.info(cmd)
         for _ in range(5):
             ret = self.lh.run(cmd)

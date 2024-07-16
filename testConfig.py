@@ -297,6 +297,7 @@ class ConfTest(StructParseBaseNamed):
     duration: int
     connections: tuple[ConfConnection, ...]
     logs: pathlib.Path
+    oci_bin: str
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -306,6 +307,7 @@ class ConfTest(StructParseBaseNamed):
             "duration": self.duration,
             "connections": [c.serialize() for c in self.connections],
             "logs": str(self.logs),
+            "oci_bin": self.oci_bin,
         }
 
     @staticmethod
@@ -372,6 +374,14 @@ class ConfTest(StructParseBaseNamed):
             if not isinstance(v, str):
                 raise ValueError(f'"{yamlpath}.logs": expects a string but got {v}')
             logs = v
+        
+        oci_bin = vdict.pop("oci_bin", None)
+        if oci_bin is None:
+            oci_bin = "podman"
+        elif not isinstance(oci_bin, str):
+            raise ValueError(
+                f'"{yamlpath}.oci_bin": expects a string but got {oci_bin}'
+            )
 
         structparse_check_empty_dict(vdict, yamlpath)
 
@@ -384,6 +394,7 @@ class ConfTest(StructParseBaseNamed):
             duration=duration,
             connections=tuple(connections),
             logs=pathlib.Path(logs),
+            oci_bin=oci_bin,
         )
 
 

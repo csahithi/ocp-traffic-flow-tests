@@ -251,6 +251,10 @@ class Task(ABC):
     def get_duration(self) -> int:
         return self.ts.cfg_descr.get_tft().duration
 
+    
+    def get_oci_bin(self) -> int:
+        return self.ts.cfg_descr.get_tft().oci_bin
+    
     def get_template_args(self) -> dict[str, str]:
         return {
             "name_space": self.get_namespace(),
