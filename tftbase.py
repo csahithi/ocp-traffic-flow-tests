@@ -447,7 +447,7 @@ _test_case_typ_infos = {
         connection_mode=ConnectionMode.EXTERNAL_IP,
         is_same_node=False,
         is_server_hostbacked=False,
-        is_client_hostbacked=True,
+        is_client_hostbacked=False,
     ),
     TestCaseType.HOST_TO_EXTERNAL: TestCaseTypInfo(
         connection_mode=ConnectionMode.EXTERNAL_IP,

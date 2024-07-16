@@ -434,6 +434,7 @@ class Task(ABC):
     def start_setup(self) -> None:
         assert self._setup_operation is None
         self._setup_operation = self._create_setup_operation()
+        logger.info(f"Setup operation: { self._setup_operation is not None }")
         if self._setup_operation is not None:
             self._setup_operation.start()
 
