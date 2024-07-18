@@ -1,6 +1,7 @@
 import datetime
 import json
 import perf
+import time
 
 from pathlib import Path
 
@@ -48,10 +49,21 @@ class TrafficFlowTests:
             logger.error(r)
             raise Exception("cleanup_previous_testspace(): Failed to delete services")
         logger.info(f"Cleaned services with label tft-tests in namespace {namespace}")
+        logger.info(f"Cleaning multi-networkpolicies with label tft-tests in namespace {namespace}")
+        r = cfg_descr.tc.client_tenant.oc(
+            f"delete multi-networkpolicies -n {namespace} -l tft-tests"
+        )
+        if r.returncode != 0:
+            logger.error(r)
+            raise Exception("cleanup_previous_testspace(): Failed to delete multi-networkpolicies")
+        logger.info(f"Cleaned multi-networkpolicies with label tft-tests in namespace {namespace}")
         logger.info(
             f"Cleaning external containers {perf.EXTERNAL_PERF_SERVER} (if present)"
         )
-        cmd = f"podman rm --force --time 10 {perf.EXTERNAL_PERF_SERVER}"
+        if cfg_descr.get_tft().oci_bin == "docker":
+            cmd = f"docker stop --time 10 {perf.EXTERNAL_PERF_SERVER} && docker rm --force {perf.EXTERNAL_PERF_SERVER}"
+        else:
+            cmd = f"podman rm --force --time 10 {perf.EXTERNAL_PERF_SERVER}"
         host.local.run(cmd)
 
     def _create_log_paths_from_tests(self, test: testConfig.ConfTest) -> Path:
@@ -129,6 +141,7 @@ class TrafficFlowTests:
         for t in servers + clients + monitors:
             t.initialize()
 
+        time.sleep(10)
         ts.initialize_clmo_barrier(len(clients) + len(monitors))
 
         for tasks in servers + clients + monitors:

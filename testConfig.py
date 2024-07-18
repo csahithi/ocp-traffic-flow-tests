@@ -180,6 +180,7 @@ class ConfConnection(StructParseBaseNamed):
     server: tuple[ConfServer, ...]
     client: tuple[ConfClient, ...]
     plugins: tuple[ConfPlugin, ...]
+    secondary_network_nad: str
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -189,6 +190,7 @@ class ConfConnection(StructParseBaseNamed):
             "server": [s.serialize() for s in self.server],
             "client": [c.serialize() for c in self.client],
             "plugins": [p.serialize() for p in self.plugins],
+            "secondary_network_nad": self.secondary_network_nad
         }
 
     @staticmethod
@@ -255,6 +257,13 @@ class ConfConnection(StructParseBaseNamed):
                     ConfPlugin.parse(yamlidx2, f"{yamlpath}.plugins[{yamlidx}]", arg)
                 )
 
+        secondary_network_nad = ""
+        v = vdict.pop("secondary_network_nad", None)
+        if v is not None:
+            if not isinstance(v, str):
+                raise ValueError(f'"{yamlpath}.name": expects a string but got {name}')
+            secondary_network_nad = v
+
         structparse_check_empty_dict(vdict, yamlpath)
 
         if len(server) > 1:
@@ -277,6 +286,7 @@ class ConfConnection(StructParseBaseNamed):
             server=tuple(server),
             client=tuple(client),
             plugins=tuple(plugins),
+            secondary_network_nad=secondary_network_nad
         )
 
 
@@ -288,6 +298,7 @@ class ConfTest(StructParseBaseNamed):
     duration: int
     connections: tuple[ConfConnection, ...]
     logs: pathlib.Path
+    oci_bin: str
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -297,6 +308,7 @@ class ConfTest(StructParseBaseNamed):
             "duration": self.duration,
             "connections": [c.serialize() for c in self.connections],
             "logs": str(self.logs),
+            "oci_bin": self.oci_bin,
         }
 
     @staticmethod
@@ -363,6 +375,14 @@ class ConfTest(StructParseBaseNamed):
             if not isinstance(v, str):
                 raise ValueError(f'"{yamlpath}.logs": expects a string but got {v}')
             logs = v
+        
+        oci_bin = vdict.pop("oci_bin", None)
+        if oci_bin is None:
+            oci_bin = "podman"
+        elif not isinstance(oci_bin, str):
+            raise ValueError(
+                f'"{yamlpath}.oci_bin": expects a string but got {oci_bin}'
+            )
 
         structparse_check_empty_dict(vdict, yamlpath)
 
@@ -375,6 +395,7 @@ class ConfTest(StructParseBaseNamed):
             duration=duration,
             connections=tuple(connections),
             logs=pathlib.Path(logs),
+            oci_bin=oci_bin,
         )
 
 

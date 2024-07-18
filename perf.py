@@ -54,6 +54,10 @@ class PerfServer(Task, abc.ABC):
         self.out_file_yaml = out_file_yaml
         self.pod_name = pod_name
 
+        if self.connection_mode == ConnectionMode.MULTI_NETWORK:
+            self.create_ingress_multi_network_policy(self.port)
+            self.create_egress_multi_network_policy(self.port)
+
     def get_template_args(self) -> dict[str, str]:
 
         extra_args: dict[str, str] = {}
@@ -64,6 +68,7 @@ class PerfServer(Task, abc.ABC):
         return {
             **super().get_template_args(),
             "default_network": self.ts.conf_server.default_network,
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
             **extra_args,
         }
 
@@ -83,8 +88,9 @@ class PerfServer(Task, abc.ABC):
             # Podman scenario
             end_time = time.monotonic() + 60
             while time.monotonic() < end_time:
+                oci_bin = self.get_oci_bin()
                 r = self.lh.run(
-                    f"podman ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
+                    f"{oci_bin} ps --filter status=running --filter name={self.pod_name} --format '{{{{.Names}}}}'"
                 )
                 if self.pod_name in r.out:
                     break
@@ -115,8 +121,12 @@ class PerfServer(Task, abc.ABC):
         th_cmd = self._create_setup_operation_get_thread_action_cmd()
 
         if self.connection_mode == ConnectionMode.EXTERNAL_IP:
-            cmd = f"podman run -it --init --replace --rm -p {self.port} --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
-            cancel_cmd = f"podman rm --force {self.pod_name}"
+            oci_bin = self.get_oci_bin()
+            if oci_bin == "docker":
+                cmd = f"docker rm -f {self.pod_name} && docker run -d --init --rm -p {self.port} --network=kind --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
+            else:
+                cmd = f"podman run -it --init --replace --rm -p {self.port} --name={self.pod_name} {tftbase.get_tft_test_image()} {th_cmd}"
+            cancel_cmd = f"{oci_bin} rm --force {self.pod_name}"
         else:
             self.setup_pod()
             ca_cmd = self._create_setup_operation_get_cancel_action_cmd()
@@ -195,6 +205,7 @@ class PerfClient(Task, abc.ABC):
         return {
             **super().get_template_args(),
             "default_network": self.ts.conf_client.default_network,
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
             "pod_name": self.pod_name,
         }
 
@@ -217,13 +228,19 @@ class PerfClient(Task, abc.ABC):
             external_pod_ip = self.get_podman_ip(self.server.pod_name)
             logger.debug(f"get_target_ip() External connection to {external_pod_ip}")
             return external_pod_ip
+        elif self.connection_mode in (ConnectionMode.MULTI_NETWORK, ConnectionMode.MULTI_HOME):
+            server_ip2 = self.server.get_secondary_ip()
+            logger.debug(f"get_target_ip() Multi network connection to {server_ip2}")
+            return server_ip2
         server_ip = self.server.get_pod_ip()
         logger.debug(f"get_target_ip() Connection to server at {server_ip}")
         return server_ip
 
     def get_podman_ip(self, pod_name: str) -> str:
-        cmd = "podman inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
-
+        if self.get_oci_bin() == "docker":
+            cmd = "docker inspect --format '{{.NetworkSettings.Networks.kind.IPAddress}}' " + pod_name
+        else:
+            cmd = "podman inspect --format '{{.NetworkSettings.IPAddress}}' " + pod_name
         for _ in range(5):
             ret = self.lh.run(cmd)
             if ret.returncode == 0:

@@ -265,13 +265,18 @@ class Task(ABC):
     def get_duration(self) -> int:
         return self.ts.cfg_descr.get_tft().duration
 
+    def get_oci_bin(self) -> int:
+        return self.ts.cfg_descr.get_tft().oci_bin
+    
     def get_template_args(self) -> dict[str, str]:
         return {
             "name_space": self.get_namespace(),
             "test_image": tftbase.get_tft_test_image(),
             "image_pull_policy": tftbase.get_tft_image_pull_policy(),
-            "command": "/sbin/init",
-            "args": "",
+            # /sbin/init is not working with containerd. The pod goes into CrashLoopBackOff state 
+            # To avoid this, sleep infinity is added to the entrypoint
+            "command": ["/bin/sh", "-c"],
+            "args": "/sbin/init; sleep infinity",
             "index": f"{self.index}",
             "node_name": self.node_name,
         }
@@ -342,6 +347,19 @@ class Task(ABC):
         r = self.run_oc(f"get pod {self.pod_name} -o yaml", die_on_error=True)
         y = yaml.safe_load(r.out)
         return typing.cast(str, y["status"]["podIP"])
+    
+    def get_secondary_ip(self) -> str:
+        jsonpath = '{.metadata.annotations.k8s\.ovn\.org\/pod-networks}'
+        logger.info(f"get pod {self.pod_name} -o jsonpath='{jsonpath}'")        
+        r = self.run_oc(f"get pod {self.pod_name} -o jsonpath='{jsonpath}'")
+        if r.returncode != 0:
+            logger.info(r)
+            sys.exit(-1)
+
+        y = yaml.safe_load(r.out)
+        ip_address_with_cidr = typing.cast(str, y[self.ts.connection.secondary_network_nad]["ip_address"])
+        ip_address = ip_address_with_cidr.split("/")[0] if ip_address_with_cidr else ""
+        return typing.cast(str, ip_address)
 
     def create_cluster_ip_service(self) -> str:
         in_file_template = "./manifests/svc-cluster-ip.yaml.j2"
@@ -379,6 +397,44 @@ class Task(ABC):
         return self.run_oc(
             "get service tft-nodeport-service -o=jsonpath='{.spec.clusterIP}'"
         ).out
+
+    def create_ingress_multi_network_policy(self, ingressPort: int):
+        in_file_template = "./manifests/allow-ingress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-ingress-veth-mnp.yaml"
+
+        template_args = {
+            **self.get_template_args(),
+            "ingress_port": f"{ingressPort}",
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
+        }
+
+        self.render_file("Ingress Multi Network Policy", in_file_template, out_file_yaml, template_args)
+        logger.info(f"Creating Ingress MNP {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Ingress MNP")
+
+    def create_egress_multi_network_policy(self, egressPort: int):
+        in_file_template = "./manifests/allow-egress-veth-mnp.yaml.j2"
+        out_file_yaml = "./manifests/yamls/allow-egress-veth-mnp.yaml"
+
+        template_args = {
+            **self.get_template_args(),
+            "egress_port": f"{egressPort}",
+            "secondary_network_nad": self.ts.connection.secondary_network_nad,
+        }
+
+        self.render_file("Egress Multi Network Policy", in_file_template, out_file_yaml, template_args)
+        logger.info(f"Creating Egress MNP {out_file_yaml}")
+        r = self.run_oc(f"apply -f {out_file_yaml}")
+        if r.returncode != 0:
+            if "already exists" not in r.err:
+                logger.info(r)
+                sys.exit(-1)
+        logger.info("Created Egress MNP")
 
     def start_setup(self) -> None:
         assert self._setup_operation is None

@@ -6,6 +6,7 @@ tft:
     duration: "30"
     # Location of artifacts from run can be specified: default <working-dir>/ft-logs/
     # logs: "/tmp/ft-logs"
+    oci_bin: docker
     connections:
       - name: "Connection_1"
         # supported types: iperf-tcp, iperf-udp, netperf-tcp-stream, netperf-tcp-rr
@@ -22,5 +23,6 @@ tft:
           - name: measure_cpu
           - name: measure_power
           - name: validate_offload
+        secondary_network_nad: "default/ovn-secondary"
 kubeconfig:
 kubeconfig_infra:
